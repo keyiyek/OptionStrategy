@@ -14,6 +14,8 @@ namespace OptionStrategy
         // Some Global Vars
         // Objects From Other Classes
         private frmMain parentReference;
+        private OSWrapper singleWrapper;
+        private Contract contractDefinition;
 
         // These two counters are used to avoid duplicates in connection request ids
         private int tickerListCounter = 0;// here we keep track of which ticker we are processing
@@ -23,9 +25,7 @@ namespace OptionStrategy
         private string tickerSymbol;// Ticker Name
         private DateTime expirationDate;// Contract Expiration Date
         private string optionRight;// Type of options to look for
-        private OSWrapper singleWrapper;
-        private Contract contractDefinition;
-
+        
         // Strikes Table
         private double[,] strikesTable;// = { { 0.2, 2.0 }, { 0.3, 3.0 } };
 
@@ -38,16 +38,18 @@ namespace OptionStrategy
         const string contractMultiplier = "100";
         const bool contractIncludeExpired = false;
 
-
         //Connection Parameters
+        int connectionClientID;
+
         const string connectionHost = "";
         const int connectionPort = 4001;
-        const int connectionClientID = 13;
         const int connectionExtraAuth = 0;
         
-        public DataHandler(frmMain parentClass, DateTime chosenExpirationDate, string right, string[] tickers)
+        public DataHandler(int clientID, frmMain parentClass, DateTime chosenExpirationDate, string right, string[] tickers)
         {
             parentReference = parentClass;//this is to have a reference for callbacks.
+
+            connectionClientID = clientID;
 
             tickersList = tickers;
             expirationDate = chosenExpirationDate;// Setting the expiration date
@@ -67,13 +69,6 @@ namespace OptionStrategy
             this.ConnectionToTheServer(); // Connection to Server
 
             StartStrategyProcedure(tickersList[tickerListCounter]);
-        }
-
-        // This method has the sequence for all the data collecting
-        public void StartStrategyProcedure(string currentTicker)
-        {
-            tickerSymbol = currentTicker; // Up to now we didn't know which ticker to process
-            this.RequestContractDetails(); // Asking for contract details
         }
 
         // Conenction to the server
@@ -96,6 +91,13 @@ namespace OptionStrategy
             /* One (although primitive) way of knowing if we can proceed is by monitoring the order's nextValidId reception which comes down automatically after connecting. */
             /*************************************************************************************************************************************************/
             while (singleWrapper.NextOrderId <= 0) { }
+        }
+
+        // This method has the sequence for all the data collecting
+        public void StartStrategyProcedure(string currentTicker)
+        {
+            tickerSymbol = currentTicker; // Up to now we didn't know which ticker to process
+            this.RequestContractDetails(); // Asking for contract details
         }
 
         // Requests for Contracts Details
@@ -159,7 +161,7 @@ namespace OptionStrategy
                 }
                 else
                 {
-                    parentReference.TickersCompleted();
+                    //parentReference.TickersCompleted();
                 }
             }
         }

@@ -60,6 +60,7 @@
             this.dtpExirationDate.Name = "dtpExirationDate";
             this.dtpExirationDate.Size = new System.Drawing.Size(200, 20);
             this.dtpExirationDate.TabIndex = 0;
+            this.dtpExirationDate.Enter += new System.EventHandler(this.dtpExirationDate_Enter);
             // 
             // lbExpirationDate
             // 
@@ -81,6 +82,7 @@
             this.cbxRight.Name = "cbxRight";
             this.cbxRight.Size = new System.Drawing.Size(121, 21);
             this.cbxRight.TabIndex = 2;
+            this.cbxRight.Enter += new System.EventHandler(this.cbxRight_Enter);
             // 
             // lbRight
             // 
@@ -134,9 +136,9 @@
             this.lsvResults.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.ROC,
             this.Ticker});
-            this.lsvResults.Location = new System.Drawing.Point(321, 7);
+            this.lsvResults.Location = new System.Drawing.Point(320, 7);
             this.lsvResults.Name = "lsvResults";
-            this.lsvResults.Size = new System.Drawing.Size(1233, 783);
+            this.lsvResults.Size = new System.Drawing.Size(1234, 783);
             this.lsvResults.TabIndex = 8;
             this.lsvResults.UseCompatibleStateImageBehavior = false;
             this.lsvResults.View = System.Windows.Forms.View.Details;
@@ -205,6 +207,7 @@
             this.txbAddTickers.Size = new System.Drawing.Size(100, 20);
             this.txbAddTickers.TabIndex = 2;
             this.txbAddTickers.Text = "Ticker Symbol";
+            this.txbAddTickers.Enter += new System.EventHandler(this.txbAddTickers_Enter);
             // 
             // lbLoadTickers
             // 
@@ -246,6 +249,7 @@
             // 
             // frmMain
             // 
+            this.AcceptButton = this.btConnect;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1592, 887);
