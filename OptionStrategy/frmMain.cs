@@ -11,13 +11,15 @@ namespace OptionStrategy
     {
         // We need a DataHandler and some Delegates
         DataHandler dataHandler;
+        DataHandler2 dataHandler2;
         Dictionary<string, double[,]> database = new Dictionary<string, double[,]>();
-        public delegate void SetAddCallback(string ticker, double price, double[,] strikes);
-
+        
         // Delegates to handle thread safeness in modifying the form
         public delegate void DataHandlerPageAdd(TabPage resultPage);
         public delegate void DataHandlerResultsAdd(ListViewItem TickersResults);
+        private readonly object syncLock = new object();
 
+        
         // Global Definitions
         const String doubleFormat = "0.00"; // This is the format we want out double numbers to be displayed
         int tickerCount; // We need to know how many tickers we are expecting back
@@ -91,16 +93,6 @@ namespace OptionStrategy
             File.WriteAllLines(fileName, fileLines);
         }
 
-        // This was for developing purposes, has to go in the final stage of deployment
-        private void btDisplay_Click(object sender, EventArgs e)
-        {
-            foreach (var item in database)
-            {
-                TabPageSetup(item.Key, 50.00, item.Value);
-            }
-        }
-
-
         // UI Other Methods
         //*************************************************************************************************
         // Set the focus on Add Ticker when the txb is selected
@@ -127,6 +119,22 @@ namespace OptionStrategy
         // Here we create a DataHandler, it will give us back, somehow, the data about the Ticker
         private void btConnect_Click(object sender, EventArgs e)
         {
+            // Setting the market status variables
+            int priceField = 4;
+            int optionField = 12;
+            if(cbxMarketStatus.Text == "OPEN")
+            {
+                priceField = 1;
+                optionField = 10;
+            }
+
+            if (cbxMarketStatus.Text == "CLOSED")
+            {
+                priceField = 4;
+                optionField = 12;
+            }
+
+
             // Getting the tickers displayed in the listbox into 8 different arrays (8 is the max number of clients we can connect at the same time)
             // Finding the arrays dimensions
             int bigArraysDimension = (int)Math.Floor((double)lsbTickers.Items.Count / numberOfClients); // First seven arrays dimention 
@@ -139,18 +147,37 @@ namespace OptionStrategy
                 {
                     // Creating 7 mini arrays with different tickers lists and feading them to 7 DataHandlers
                     string[] miniTickerList = CreateMiniTickerList(i, bigArraysDimension);
-                    dataHandler = new DataHandler(i, this, dtpExirationDate.Value.Date, cbxRight.Text, miniTickerList);
 
+                    // Deciding wether to create a DataHandler for serial computing, or a DataHandler2 for parallel computing
+                    if (chbxParallelComputing.Checked)
+                    {
+                        dataHandler2 = new DataHandler2(i, this, dtpExirationDate.Value.Date, cbxRight.Text, miniTickerList, priceField, optionField);
+                    }
+                    else
+                    {
+                        dataHandler = new DataHandler(i, this, dtpExirationDate.Value.Date, cbxRight.Text, miniTickerList, priceField, optionField);
+
+                    }
                 }
             }
-            if (lastArrayDimension == 0)//If there is no last array means the 8th array has the same dimentions of the first 7
-            {
-                lastArrayDimension = bigArraysDimension;
-            }
+                if (lastArrayDimension == 0)//If there is no last array means the 8th array has the same dimentions of the first 7
+                {
+                    lastArrayDimension = bigArraysDimension;
+                }
 
-            // We create the last array and dataHandler
-            string[] lastArray = CreateMiniTickerList(numberOfClients, lastArrayDimension, bigArraysDimension);
-            dataHandler = new DataHandler(numberOfClients, this, dtpExirationDate.Value.Date, cbxRight.Text, lastArray);
+                // We create the last array and dataHandler
+                string[] lastArray = CreateMiniTickerList(numberOfClients, lastArrayDimension, bigArraysDimension);
+
+                // Deciding wether to create a DataHandler for serial computing, or a DataHandler2 for parallel computing
+                // This is the second time, not very elegant
+                if (chbxParallelComputing.Checked)
+                {
+                    dataHandler2 = new DataHandler2(numberOfClients, this, dtpExirationDate.Value.Date, cbxRight.Text, lastArray, priceField, optionField);
+                }
+                else
+                {
+                    dataHandler = new DataHandler(numberOfClients, this, dtpExirationDate.Value.Date, cbxRight.Text, lastArray, priceField, optionField);
+                }
 
         }
 
@@ -176,21 +203,25 @@ namespace OptionStrategy
             return miniTickerList;
         }
 
-        // This is to know DataHandler has finished
-        public void TickersCompleted()
+        public void SetStrikes(string tickerSymbol, double tickerPrice, Dictionary<double, double[]> scenarios)
         {
-            MessageBox.Show("Connection Completed!");
-        }
-
-        public void SetStrikes(string tickerSymbol, double[,] dataTable)
-        {
-            // Get all the tickers data in a dictionary and then call to display them in tab pages
-            if (dataTable.GetUpperBound(0) > 0)// If it is 0 means no data was retreived, better avoid processing, out-of-range exceptions could be thrown
+            // This is to make sure we do one TabPage at a time
+            lock (syncLock)
             {
-                database.Add(tickerSymbol, dataTable);
+                // This is not very elegant, transforming a Dictionary into a 2d Array
+                // Problem is, Formatter works with 2d arrays and I don't want to touch it for now
+                int i = 0;
+                double[,] scenariosList = new double[scenarios.Count,3];// Create the 2D Array
+                foreach(double key in scenarios.Keys)
+                {
+                    scenariosList[i, 0] = key;// First is the strike
+                    scenariosList[i, 1] = scenarios[key][0]; // Then the delta
+                    scenariosList[i, 2] = scenarios[key][1]; // Then the bid
+                    i++;
+                }
+                // Let's try to build the TabPage
+                this.TabPageSetup(tickerSymbol, tickerPrice, scenariosList);
             }
-            this.DisplayPages();
-
         }
 
 
@@ -311,14 +342,6 @@ namespace OptionStrategy
             }
         }
 
-        // Here we call the display pages
-        private void DisplayPages()
-        {
-            foreach (var item in database)// One page for each ticker
-            {
-                TabPageSetup(item.Key, 50.00, item.Value);// Parameters are ticker symbole, price and the strikes table
-            }
-        }
 
     }
 }

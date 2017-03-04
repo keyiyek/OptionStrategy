@@ -48,7 +48,9 @@
             this.lsbTickers = new System.Windows.Forms.ListBox();
             this.ofdLoadTickers = new System.Windows.Forms.OpenFileDialog();
             this.sfdSaveTickers = new System.Windows.Forms.SaveFileDialog();
-            this.btDisplay = new System.Windows.Forms.Button();
+            this.cbxMarketStatus = new System.Windows.Forms.ComboBox();
+            this.lbMarketStatus = new System.Windows.Forms.Label();
+            this.chbxParallelComputing = new System.Windows.Forms.CheckBox();
             this.tbcMain.SuspendLayout();
             this.tbpTickers.SuspendLayout();
             this.SuspendLayout();
@@ -95,7 +97,7 @@
             // 
             // btConnect
             // 
-            this.btConnect.Location = new System.Drawing.Point(1424, 25);
+            this.btConnect.Location = new System.Drawing.Point(1505, 24);
             this.btConnect.Name = "btConnect";
             this.btConnect.Size = new System.Drawing.Size(75, 23);
             this.btConnect.TabIndex = 4;
@@ -237,15 +239,35 @@
             this.sfdSaveTickers.DefaultExt = "txt";
             this.sfdSaveTickers.FileOk += new System.ComponentModel.CancelEventHandler(this.sfdSaveTickers_FileOk);
             // 
-            // btDisplay
+            // cbxMarketStatus
             // 
-            this.btDisplay.Location = new System.Drawing.Point(1505, 25);
-            this.btDisplay.Name = "btDisplay";
-            this.btDisplay.Size = new System.Drawing.Size(75, 23);
-            this.btDisplay.TabIndex = 6;
-            this.btDisplay.Text = "Display";
-            this.btDisplay.UseVisualStyleBackColor = true;
-            this.btDisplay.Click += new System.EventHandler(this.btDisplay_Click);
+            this.cbxMarketStatus.FormattingEnabled = true;
+            this.cbxMarketStatus.Items.AddRange(new object[] {
+            "OPEN",
+            "CLOSED"});
+            this.cbxMarketStatus.Location = new System.Drawing.Point(346, 23);
+            this.cbxMarketStatus.Name = "cbxMarketStatus";
+            this.cbxMarketStatus.Size = new System.Drawing.Size(121, 21);
+            this.cbxMarketStatus.TabIndex = 7;
+            // 
+            // lbMarketStatus
+            // 
+            this.lbMarketStatus.AutoSize = true;
+            this.lbMarketStatus.Location = new System.Drawing.Point(346, 8);
+            this.lbMarketStatus.Name = "lbMarketStatus";
+            this.lbMarketStatus.Size = new System.Drawing.Size(73, 13);
+            this.lbMarketStatus.TabIndex = 8;
+            this.lbMarketStatus.Text = "Market Status";
+            // 
+            // chbxParallelComputing
+            // 
+            this.chbxParallelComputing.AutoSize = true;
+            this.chbxParallelComputing.Location = new System.Drawing.Point(473, 25);
+            this.chbxParallelComputing.Name = "chbxParallelComputing";
+            this.chbxParallelComputing.Size = new System.Drawing.Size(92, 17);
+            this.chbxParallelComputing.TabIndex = 9;
+            this.chbxParallelComputing.Text = "DataHandler2";
+            this.chbxParallelComputing.UseVisualStyleBackColor = true;
             // 
             // frmMain
             // 
@@ -253,7 +275,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1592, 887);
-            this.Controls.Add(this.btDisplay);
+            this.Controls.Add(this.chbxParallelComputing);
+            this.Controls.Add(this.lbMarketStatus);
+            this.Controls.Add(this.cbxMarketStatus);
             this.Controls.Add(this.tbcMain);
             this.Controls.Add(this.btConnect);
             this.Controls.Add(this.lbRight);
@@ -292,7 +316,9 @@
         private System.Windows.Forms.ListBox lsbTickers;
         private System.Windows.Forms.OpenFileDialog ofdLoadTickers;
         private System.Windows.Forms.SaveFileDialog sfdSaveTickers;
-        private System.Windows.Forms.Button btDisplay;
+        private System.Windows.Forms.ComboBox cbxMarketStatus;
+        private System.Windows.Forms.Label lbMarketStatus;
+        private System.Windows.Forms.CheckBox chbxParallelComputing;
     }
 }
 

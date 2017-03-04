@@ -8,12 +8,12 @@ using IBApi;
 namespace OptionStrategy
 {
     // Here we Override what we need from the Wrapper
-    class OSWrapper : AbstractIBWrapper
+    class OSWrapper2 : AbstractIBWrapper
     {
         //GLOBAL VARIABLES
         //*********************************************************************************
-        // The creator DataHandler
-        DataHandler parentDataHandler;
+        // The creator DataHandler2
+        DataHandler2 parentDataHandler2;
         // The data coming from the servers
         private List<double> contractsStrike = new List<double>();
         private double[] incomingStrikes;
@@ -23,15 +23,15 @@ namespace OptionStrategy
         private int tickPriceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed
         private int tickOptionComputationField;// 10=Bid, 11=Ask, 12=Last, 13=Model
 
-        public OSWrapper(DataHandler parentClass, int priceField, int optionField)
+        public OSWrapper2(DataHandler2 parentClass, int priceField, int optionField)
         {
-            parentDataHandler = parentClass;
+            parentDataHandler2 = parentClass;
             tickPriceField = priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed
             tickOptionComputationField = optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model
 
         }
 
-        //OVERRIDEN METHODS ARE ALSO DELEGATES FROM DATAHANDLER
+        //OVERRIDEN METHODS ARE ALSO DELEGATES FROM DataHandler2
         //*********************************************************************************
         // Contract Details
         public override void contractDetails(int reqId, ContractDetails contractDetails)
@@ -45,12 +45,12 @@ namespace OptionStrategy
         {
             //base.contractDetailsEnd(reqId);
             incomingStrikes = new double[contractsStrike.Count];
-            for(int i = 0; i < contractsStrike.Count; i++ )
+            for (int i = 0; i < contractsStrike.Count; i++)
             {
                 incomingStrikes[i] = contractsStrike[i];
             }
             Array.Sort(incomingStrikes);
-            parentDataHandler.SetStrikesList(reqId, incomingStrikes);
+            parentDataHandler2.SetStrikesList(reqId, incomingStrikes);
 
         }
 
@@ -59,11 +59,11 @@ namespace OptionStrategy
         {
             //base.tickPrice(tickerId, field, price, canAutoExecute);
             // If bid price
-            if(field == tickPriceField)// 1=Bid, 2=Ask, 4=Last, 9=Closed
+            if (field == tickPriceField)// 1=Bid, 2=Ask, 4=Last, 9=Closed
             {
                 incomingBid = price;
             }
-            
+
         }
 
         // Delta
@@ -71,7 +71,7 @@ namespace OptionStrategy
         {
             //base.tickOptionComputation(tickerId, field, impliedVolatility, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
 
-            if(field == tickOptionComputationField)// 10=Bid, 11=Ask, 12=Last, 13=Model
+            if (field == tickOptionComputationField)// 10=Bid, 11=Ask, 12=Last, 13=Model
             {
                 incomingDelta = delta;
             }
@@ -81,8 +81,8 @@ namespace OptionStrategy
         public override void tickSnapshotEnd(int tickerId)
         {
             //base.tickSnapshotEnd(tickerId);
-            double[] bidAndDelta = new double[] { incomingDelta, incomingBid};// Actually should be DeltaAndBid since they come the other way around
-            parentDataHandler.SetBidAndDelta(tickerId, bidAndDelta);
+            double[] bidAndDelta = new double[] { incomingDelta, incomingBid };// Actually should be DeltaAndBid since they come the other way around
+            parentDataHandler2.SetBidAndDelta(tickerId, bidAndDelta);
             incomingBid = 0; // Reset the data, in case next one isn't found
             incomingDelta = 0; // Reset the data, in case next one isn't found
         }
