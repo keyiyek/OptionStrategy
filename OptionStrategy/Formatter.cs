@@ -62,8 +62,9 @@ namespace OptionStrategy
             return delta;
         }
 
-        // Third line, this is the Delta diffrentials, aka the Scenario probability, very similar to the previous ones, just a different calculation
-        public double[] ProbabilityDiffLine(double[,] resultTable)
+        // This is used with the delta and puts
+        // For the put we want the probability to get lower, so is 1 - Delta
+        public double[] ProbabilityDiffLineDeltaPut(double[,] resultTable)
         {
             double[] deltaDiff = new double[resultTable.GetUpperBound(0) + 4];
 
@@ -73,13 +74,41 @@ namespace OptionStrategy
             deltaDiff[2] = 0;
 
             // First one has no calculation because is the lower bound
-            // It is set manualli otherwise the calculation would fire a "Index out of Range" Exception
-            deltaDiff[3] = resultTable[0, 1];
+            // It is set manualy otherwise the calculation would fire a "Index out of Range" Exception
+            deltaDiff[3] = 1 - resultTable[0, 1];
 
             for (int i = 4; i <= deltaDiff.GetUpperBound(0); i++)
             {
-                deltaDiff[i] = resultTable[i - 3, 1] - resultTable[i - 4, 1];
+                deltaDiff[i] = (1 - resultTable[i - 3, 1]) - (1 - resultTable[i - 4, 1]);
             }
+
+            // Store the results also in a global Array, so thay can used in the calculations of the NormalLine method
+            probabilityDiffLine = deltaDiff;
+
+            return deltaDiff;
+        }
+
+        // This is used with the delta and calls
+        // For the put we want the probability to get lower, so is 1 - Delta
+        public double[] ProbabilityDiffLineDeltaCall(double[,] resultTable)
+        {
+            double[] deltaDiff = new double[resultTable.GetUpperBound(0) + 4];
+
+            // Skip the first three columns
+            deltaDiff[0] = 0;
+            deltaDiff[1] = 0;
+            deltaDiff[2] = 0;
+
+            // First one has no calculation because is the lower bound
+            
+            for (int i = 4; i < deltaDiff.GetUpperBound(0); i++)
+            {
+                deltaDiff[i] = resultTable[i - 4, 1] - resultTable[i - 3, 1];
+            }
+
+            // Last number has no calculation cause is the upper bound
+            // It is set manualy otherwise the calculation would fire a "Index out of Range" Exception
+            deltaDiff[deltaDiff.GetUpperBound(0)] = resultTable[resultTable.GetUpperBound(0), 1];
 
             // Store the results also in a global Array, so thay can used in the calculations of the NormalLine method
             probabilityDiffLine = deltaDiff;

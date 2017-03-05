@@ -16,6 +16,7 @@ namespace OptionStrategy
         private frmMain parentReference;
         private OSWrapper singleWrapper;
         private Contract contractDefinition;
+        private bool parallelComputing = false;
 
         // These two counters are used to avoid duplicates in connection request ids
         private int tickerListCounter = 0;// here we keep track of which ticker we are processing
@@ -34,8 +35,6 @@ namespace OptionStrategy
         // CONSTANTS
         //************************************************
         // Contract Definition
-        const string typeStock = "STK";
-        const string typeOption = "OPT";
         const string contractExchange = "SMART";
         const string contractCurrency = "USD";
         const string contractMultiplier = "100";
@@ -74,14 +73,14 @@ namespace OptionStrategy
 
             // Constants setting for the Contracts
             contractDefinition = new Contract();
-            contractDefinition.SecType = typeStock;
+            contractDefinition.SecType = Properties.Resources.typeStock;
             contractDefinition.Exchange = contractExchange;
             contractDefinition.Currency = contractCurrency;
             contractDefinition.Multiplier = contractMultiplier;
             contractDefinition.IncludeExpired = contractIncludeExpired;
 
             // We set the changing contract details
-            contractDefinition.LastTradeDateOrContractMonth = expirationDate.ToString("yyyyMMdd");
+            contractDefinition.LastTradeDateOrContractMonth = expirationDate.ToString(Properties.Resources.dateFormat);
             contractDefinition.Right = optionRight;
 
             this.ConnectionToTheServer(); // Connection to Server
@@ -111,6 +110,12 @@ namespace OptionStrategy
             while (singleWrapper.NextOrderId <= 0) { }
         }
 
+        // Disconnect from the server
+        public void DisconnectionFromTheServer()
+        {
+            singleWrapper.ClientSocket.eDisconnect();
+        }
+
         // This method has the sequence for all the data collecting
         public void StartStrategyProcedure(string currentTicker)
         {
@@ -120,13 +125,13 @@ namespace OptionStrategy
             contractDefinition.Strike = 0; // We need to reset the strike to 0
 
             // Creating a TickerData and adding it to the dictionary
-            TickerData tickerData = new TickerData(parentReference, tickerSymbol);
+            TickerData tickerData = new TickerData(parentReference, tickerSymbol, parallelComputing);
             tickerDataDict.Add(connectionTK, tickerData);
 
             // we ask for the underlying
-            contractDefinition.SecType = typeStock;
+            contractDefinition.SecType = Properties.Resources.typeStock;
             this.RequestTickerPrice(); // Asking for the price
-            contractDefinition.SecType = typeOption; // Changing to Option from now on
+            contractDefinition.SecType = Properties.Resources.typeOption; // Changing to Option from now on
             this.RequestContractDetails(); // Asking for contract details
         }
 

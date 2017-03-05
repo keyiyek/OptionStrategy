@@ -15,8 +15,7 @@ namespace OptionStrategy
         // The creator DataHandler2
         DataHandler2 parentDataHandler2;
         // The data coming from the servers
-        private List<double> contractsStrike = new List<double>();
-        private double[] incomingStrikes;
+        private Dictionary<int, List<double>> contractsStrike = new Dictionary<int, List<double>>();
         private double incomingBid;
         private double incomingDelta;
 
@@ -37,20 +36,24 @@ namespace OptionStrategy
         public override void contractDetails(int reqId, ContractDetails contractDetails)
         {
             //base.contractDetails(reqId, contractDetails);
-            contractsStrike.Add(contractDetails.Summary.Strike);
+            // If the key already exists just add the strike
+            if(contractsStrike.ContainsKey(reqId))
+            {
+                contractsStrike[reqId].Add(contractDetails.Summary.Strike);
+            }
+            else // If not add the key too
+            {
+                List<double> tempStrikeList = new List<double>();
+                tempStrikeList.Add(contractDetails.Summary.Strike);
+                contractsStrike.Add(reqId, tempStrikeList);
+            }
         }
 
         // Finished getting Contracts Details
         public override void contractDetailsEnd(int reqId)
         {
             //base.contractDetailsEnd(reqId);
-            incomingStrikes = new double[contractsStrike.Count];
-            for (int i = 0; i < contractsStrike.Count; i++)
-            {
-                incomingStrikes[i] = contractsStrike[i];
-            }
-            Array.Sort(incomingStrikes);
-            parentDataHandler2.SetStrikesList(reqId, incomingStrikes);
+            parentDataHandler2.SetStrikesList(reqId, contractsStrike[reqId]);
 
         }
 

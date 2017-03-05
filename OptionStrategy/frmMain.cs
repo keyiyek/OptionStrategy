@@ -12,16 +12,14 @@ namespace OptionStrategy
         // We need a DataHandler and some Delegates
         DataHandler dataHandler;
         DataHandler2 dataHandler2;
-        Dictionary<string, double[,]> database = new Dictionary<string, double[,]>();
-        
+        List<DataHandler> dataHandlerList = new List<DataHandler>();
+        List<DataHandler2> dataHandlerList2 = new List<DataHandler2>();
+
         // Delegates to handle thread safeness in modifying the form
         public delegate void DataHandlerPageAdd(TabPage resultPage);
         public delegate void DataHandlerResultsAdd(ListViewItem TickersResults);
         private readonly object syncLock = new object();
 
-        
-        // Global Definitions
-        const String doubleFormat = "0.00"; // This is the format we want out double numbers to be displayed
         int tickerCount; // We need to know how many tickers we are expecting back
         const int numberOfClients = 8; // The number of parallel clients we can connect
 
@@ -81,6 +79,7 @@ namespace OptionStrategy
         {
             DialogResult saveTickers = sfdSaveTickers.ShowDialog();// Call the dialog
         }
+        
         // Save File Dialog
         private void sfdSaveTickers_FileOk(object sender, CancelEventArgs e)
         {
@@ -122,18 +121,20 @@ namespace OptionStrategy
             // Setting the market status variables
             int priceField = 4;
             int optionField = 12;
-            if(cbxMarketStatus.Text == "OPEN")
+            if(cbxMarketStatus.Text == Properties.Resources.marketStatusOpen)
             {
                 priceField = 1;
                 optionField = 10;
             }
 
-            if (cbxMarketStatus.Text == "CLOSED")
+            if (cbxMarketStatus.Text == Properties.Resources.marketStatusClosed)
             {
                 priceField = 4;
                 optionField = 12;
             }
 
+            // Setting how many tickers we are expecting back
+            tickerCount = lsbTickers.Items.Count;
 
             // Getting the tickers displayed in the listbox into 8 different arrays (8 is the max number of clients we can connect at the same time)
             // Finding the arrays dimensions
@@ -208,19 +209,44 @@ namespace OptionStrategy
             // This is to make sure we do one TabPage at a time
             lock (syncLock)
             {
-                // This is not very elegant, transforming a Dictionary into a 2d Array
-                // Problem is, Formatter works with 2d arrays and I don't want to touch it for now
-                int i = 0;
-                double[,] scenariosList = new double[scenarios.Count,3];// Create the 2D Array
-                foreach(double key in scenarios.Keys)
+                // We count down each time we are receiving back
+                tickerCount--;
+
+                // Here we check that there are at least two scenarios, otherwise Formatter will break.
+                if (scenarios.Count > 1)
                 {
-                    scenariosList[i, 0] = key;// First is the strike
-                    scenariosList[i, 1] = scenarios[key][0]; // Then the delta
-                    scenariosList[i, 2] = scenarios[key][1]; // Then the bid
-                    i++;
+                    // This is not very elegant, transforming a Dictionary into a 2d Array
+                    // Problem is, Formatter works with 2d arrays and I don't want to touch it for now
+                    int i = 0;
+                    double[,] scenariosList = new double[scenarios.Count, 3];// Create the 2D Array
+                    foreach (double key in scenarios.Keys)
+                    {
+                        scenariosList[i, 0] = key;// First is the strike
+                        scenariosList[i, 1] = scenarios[key][0]; // Then the delta
+                        scenariosList[i, 2] = scenarios[key][1]; // Then the bid
+                        i++;
+                    }
+                    Array.Sort(scenariosList);
+                    // Let's try to build the TabPage
+                    this.TabPageSetup(tickerSymbol, tickerPrice, scenariosList);
                 }
-                // Let's try to build the TabPage
-                this.TabPageSetup(tickerSymbol, tickerPrice, scenariosList);
+                // Here I would like to log which one I lost
+                else
+                {
+                    int j = 0;
+                }
+                // If we processed last ticker
+                if(tickerCount==0)
+                {
+                    foreach(DataHandler dataHandler in dataHandlerList)
+                    {
+                        dataHandler.DisconnectionFromTheServer();
+                    }
+                    foreach (DataHandler2 dataHandler in dataHandlerList2)
+                    {
+                        dataHandler.DisconnectionFromTheServer();
+                    }
+                }
             }
         }
 
@@ -246,7 +272,7 @@ namespace OptionStrategy
             // Ticker Labels
             tickerLabel.Location = new Point(offSet, offSet); // Place the first Label
             tickerLabel.AutoSize = true;
-            tickerLabel.Text = ticker + ": " + price.ToString(doubleFormat); // Label with ticker and price
+            tickerLabel.Text = ticker + ": " + price.ToString(Properties.Resources.doubleFormat); // Label with ticker and price
             tickerLabel.Parent = newTabPage; // Add to TabPage
             // Best Strategy Label
             MaxProfitLabel.Location = new Point(tickerLabel.Width + tickerLabel.Location.X + offSet, offSet);// Place the Profit Label beside the Ticker one
@@ -260,8 +286,14 @@ namespace OptionStrategy
             Formatter getAllInLine = new Formatter(price, strikes.GetUpperBound(0) + 1);// Initiate
             AddScenariosList(getAllInLine.ScenarioLine(strikes), newTabPage, 0);// First Line with Strike Prices
             AddScenariosList(getAllInLine.ProbabilityLine(strikes), newTabPage, 1);// Second Line with deltas
-            AddScenariosList(getAllInLine.ProbabilityDiffLine(strikes), newTabPage, 2);// Third line with differential Deltas
-
+            if (cbxRight.Text == Properties.Resources.typeCall)
+            {
+                AddScenariosList(getAllInLine.ProbabilityDiffLineDeltaCall(strikes), newTabPage, 2);// Third line with differential Deltas
+            }
+            if (cbxRight.Text == Properties.Resources.typePut)
+            {
+                AddScenariosList(getAllInLine.ProbabilityDiffLineDeltaPut(strikes), newTabPage, 2);// Third line with differential Deltas
+            }
             // Then add a line for each strike
             for (int i = 0; i <= strikes.GetUpperBound(0); i++)
             {
@@ -271,10 +303,10 @@ namespace OptionStrategy
             // Completing the page with last data about Best Strategy and ROC
             if (getAllInLine.MaxIndex() >= 0)// This means Formatter worked
             {
-                MaxProfitLabel.Text = "Max: " + strikes[getAllInLine.MaxIndex(), 0].ToString(doubleFormat);// Display Best Strategy
+                MaxProfitLabel.Text = "Max: " + strikes[getAllInLine.MaxIndex(), 0].ToString(Properties.Resources.doubleFormat);// Display Best Strategy
 
                 double roc = getAllInLine.Roc();// Get the ROC calculated by the Formatter
-                RocLabel.Text = "ROC: " + roc.ToString(doubleFormat);// Display ROC
+                RocLabel.Text = "ROC: " + roc.ToString(Properties.Resources.doubleFormat);// Display ROC
             }
             else // This means Formatter didn't work
             {
@@ -308,7 +340,7 @@ namespace OptionStrategy
                 TextBox newTexBox = new TextBox(); // Create TextBox
                 newTexBox.Width = txbWidth;
                 newTexBox.Location = new Point(60 + (i * txbWidth), 60 + (lineNumber * txbWidth));// Automatic placement
-                newTexBox.Text = numbers[i].ToString(doubleFormat); // Set the Text
+                newTexBox.Text = numbers[i].ToString(Properties.Resources.doubleFormat); // Set the Text
 
                 newTexBox.Parent = parent;// Add to TabPage
             }

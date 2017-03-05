@@ -21,13 +21,9 @@ namespace OptionStrategy
         // CONSTANTS
         //************************************************
         // Formatters
-        const string dateFormat = "yyyyMMdd";
-        const string doubleFormat = "0.00";
-        
+        const bool parallelComputing = true;
+
         // Contract Definition
-        const string contractTypeStock = "STK";
-        const string contractTypeOption = "OPT";
-        const string contractSectorType = "OPT";
         const string contractExchange = "SMART";
         const string contractCurrency = "USD";
         const string contractMultiplier = "100";
@@ -49,6 +45,7 @@ namespace OptionStrategy
         int connectionDH = 0;
         int connectionTK = 0;
         double connectionSP = 0;
+
 
 
         // Initialization
@@ -89,11 +86,13 @@ namespace OptionStrategy
                 contractDefinition.Symbol = tickersList[i]; // We set up the contract definition with the ticker symbol
 
                 // Creating a TickerData and adding it to the dictionary
-                TickerData tickerData = new TickerData(parentReference, tickersList[i]);
+                TickerData tickerData = new TickerData(parentReference, tickersList[i], parallelComputing);
                 tickerDataDict.Add(connectionTK, tickerData);
 
+                // we ask for the underlying
+                contractDefinition.SecType = Properties.Resources.typeStock;
                 this.RequestTickerPrice(); // Asking for the price
-                contractDefinition.SecType = contractTypeOption; // Changing to Option from now on
+                contractDefinition.SecType = Properties.Resources.typeOption; // Changing to Option from now on
                 this.RequestContractDetails(); // Asking for contract details
 
             }
@@ -112,13 +111,17 @@ namespace OptionStrategy
         }
 
         // Request for Market Data on Options, this function needs the ConnectionID to understand what Ticker is relevant 
-        private void RequestMarketData(int i, int connectionID, double strikePrice)
+        private void RequestMarketData(int connectionID, double strikePrice)
         {
-            contractDefinition.Strike = strikePrice; // Setup Strike Price
-                                                     
+
             // Unique ID building
-            connectionTK = CalculateTickerDataID(connectionID);
+            connectionTK = CalculateTickerDataID(connectionID); // Need to reset this everytime otherwise, with multiple tickers, it would get messed up
             connectionSP = strikePrice;
+
+            // Contract has to be reset as well
+            contractDefinition.Strike = strikePrice; // Setup Strike Price
+            contractDefinition.Symbol = tickersList[connectionTK];
+
 
             // Calling for the data
             singleWrapper.ClientSocket.reqMktData(CalculateConnectionID(), contractDefinition, "", true, null);
@@ -129,16 +132,17 @@ namespace OptionStrategy
         //********************************************************************************
         // These are methods called from the Wrapper
         // Incoming strike prices list
-        public void SetStrikesList(int connectionID, double[] incomingStrikesList)
+        public void SetStrikesList(int connectionID, List<double> incomingStrikesList)
         {
             TickerData activeTD = GetRelevantTickerData(connectionID);// Find the relevant TickerData
-            activeTD.SetStrikePricesNumber(incomingStrikesList.GetUpperBound(0));// Set its strike price counter (maybe a +1 is missing here)
+            activeTD.SetStrikePricesNumber(incomingStrikesList.Count);// Set its strike price counter (maybe a +1 is missing here)
 
             // Asking for all the strikes, in short sequence
-            for (int i = 0; i <= incomingStrikesList.GetUpperBound(0); i++)
+            foreach(double incomingStrike in incomingStrikesList)
             {
-                RequestMarketData(i, connectionID, incomingStrikesList[i]);
+                RequestMarketData(connectionID, incomingStrike);
             }
+
         }
 
         public void SetBidAndDelta(int connectionID, double[] bidAndDelta)
@@ -164,13 +168,13 @@ namespace OptionStrategy
         {
             // Setting Up Contract
             contractDefinition = new Contract();
-            contractDefinition.SecType = contractTypeStock;
+            contractDefinition.SecType = Properties.Resources.typeStock;
             contractDefinition.Exchange = contractExchange;
             contractDefinition.Currency = contractCurrency;
             contractDefinition.Multiplier = contractMultiplier;
             contractDefinition.IncludeExpired = contractIncludeExpired;
 
-            contractDefinition.LastTradeDateOrContractMonth = expirationDate.ToString(dateFormat);
+            contractDefinition.LastTradeDateOrContractMonth = expirationDate.ToString(Properties.Resources.dateFormat);
             contractDefinition.Right = right;
         }
 
@@ -194,6 +198,12 @@ namespace OptionStrategy
             /* One (although primitive) way of knowing if we can proceed is by monitoring the order's nextValidId reception which comes down automatically after connecting. */
             /*************************************************************************************************************************************************/
             while (singleWrapper.NextOrderId <= 0) { }
+        }
+
+        // Disconnect from the server
+        public void DisconnectionFromTheServer()
+        {
+            singleWrapper.ClientSocket.eDisconnect();
         }
 
         // Here we generate the unique connection ID
