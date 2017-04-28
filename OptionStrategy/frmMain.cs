@@ -328,7 +328,7 @@ namespace OptionStrategy
         {
             int txbWidth = 40; // TextBox Width
             int txbHeight = 20; // TextBox Height
-            int txbGap = 20; //Gap between each TextBox
+            int txbGap = 2; //Gap between each TextBox
             int txbLeftOffset = txbGap + txbWidth;
             int txbUpOffset = txbGap + txbHeight;
 
@@ -429,7 +429,7 @@ namespace OptionStrategy
             double delta = 1;
             for(int i = 0; i <= 10; i++)
             {
-                double[] data = new double[] { bid, delta };
+                double[] data = new double[] { delta, bid };
                 results[key + i] = data;
                 bid = bid * 2;
                 delta = delta * 0.95;

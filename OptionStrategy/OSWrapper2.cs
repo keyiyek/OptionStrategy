@@ -26,7 +26,7 @@ namespace OptionStrategy
         {
             parentDataHandler2 = parentClass;
             tickPriceFieldSTK = 66;// priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
-            tickPriceFieldOPT = 9;
+            tickPriceFieldOPT = 1;
             tickOptionComputationField = 13;// optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
 
             Console.WriteLine("Wrapper: Tick Field - " + tickPriceFieldSTK + "Tick Option STK - " + tickPriceFieldOPT + "Tick Option OPT - " + tickOptionComputationField);
