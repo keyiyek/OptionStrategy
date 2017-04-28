@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace OptionStrategy
 {
@@ -14,7 +14,8 @@ namespace OptionStrategy
         public string tickerSymbol; // name
         public double tickerPrice; // Price
         private int tickerStrikePricesNumber; // how many strike prices are there
-        public Dictionary<double, double[]> tickerStrikes = new Dictionary<double, double[]>();// The list of the strike Prices as Key, delta and bid as content
+        private int tickersCompleted;
+        public SortedDictionary<double, double[]> tickerStrikes = new SortedDictionary<double, double[]>();// The list of the strike Prices as Key, delta and bid as content
 
         private bool parallelComputing;
         
@@ -32,23 +33,33 @@ namespace OptionStrategy
         public void SetStrikePricesNumber(int strikericesNumber)
         {
             tickerStrikePricesNumber = strikericesNumber;
+
         }
 
         // Setting the price
         public void SetPrice(double price)
         {
             tickerPrice = price;// Price
+            //this.dataComplete();
+
             if (CheckIfCompleted()) { this.dataComplete(); } // Check if all the data is here, if so call Completed method
         }
 
-        public void SetStrike(double strike, double[] strikeScenario)
+        public void SetStrike(double strike, double[] incomingScenario)
         {
-            // Check for repetition in strike prices
-            if (!tickerStrikes.ContainsKey(strike))
+            // If the strike is present we already have bid or delta, now we add the other
+            if (tickerStrikes.ContainsKey(strike))
             {
-                tickerStrikes.Add(strike, strikeScenario);// Strike with bid and delta
-                if (CheckIfCompleted()) { this.dataComplete(); } // Check if all the data is here, if so call Completed method
+                tickerStrikes[strike][0] += incomingScenario[0];
+                tickerStrikes[strike][1] += incomingScenario[1];
+                tickersCompleted++; // We increment the numbers of the completed strikes
             }
+            else // If not we add the new strike
+            {
+                tickerStrikes.Add(strike, incomingScenario);// Strike with bid and delta
+            }
+            if (CheckIfCompleted()) { this.dataComplete(); } // Check if all the data is here, if so call Completed method
+            
         }
 
 
@@ -58,12 +69,16 @@ namespace OptionStrategy
         private bool CheckIfCompleted()
         {
             // We chect to have: price, all the tickers, that the number of tickers has been set (otherwise it could be that first strike gets true), that we are in parallel computing and we nee to call the sender function
-            return (tickerPrice != 0 && tickerStrikes.Count == tickerStrikePricesNumber && tickerStrikePricesNumber != 0 && parallelComputing);
-            //return (tickerStrikes.Count == tickerStrikePricesNumber && tickerStrikePricesNumber != 0 && parallelComputing);
+            Console.WriteLine("Tickers Completed: " + tickersCompleted + " of " + tickerStrikePricesNumber);
+            return (tickerPrice != 0 && tickersCompleted == tickerStrikePricesNumber && tickerStrikePricesNumber != 0 && parallelComputing);
+
+
+            // This is for testing when markets are closed
+            //return (tickersCompleted == tickerStrikePricesNumber);
         }
 
         // Erase strike prices with bid or delta = 0
-        private void DictionaryCleanUp()
+        public void DictionaryCleanUp()
         {
             // Create a list
             List<double> listOfKeysToRemove = new List<double>();
@@ -90,9 +105,10 @@ namespace OptionStrategy
         // Send data were relevant
         public void dataComplete()
         {
+            //Thread.Sleep(300000);
             // First we clean the Dictionary
-            this.DictionaryCleanUp();
 
+            this.DictionaryCleanUp();
             originalForm.SetStrikes(this.tickerSymbol, this.tickerPrice, this.tickerStrikes);
         }
 

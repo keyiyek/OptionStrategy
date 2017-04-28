@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using IBApi;
+using System.Diagnostics;
 
 namespace OptionStrategy
 {
@@ -23,11 +24,13 @@ namespace OptionStrategy
         private int tickPriceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed
         private int tickOptionComputationField;// 10=Bid, 11=Ask, 12=Last, 13=Model
 
-        public OSWrapper(DataHandler parentClass, int priceField, int optionField)
+        public OSWrapper(DataHandler parentClass)
         {
             parentDataHandler = parentClass;
-            tickPriceField = priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed
-            tickOptionComputationField = optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model
+            tickPriceField = 66;// priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
+            tickOptionComputationField = 13;// optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
+
+            Console.WriteLine("Wrapper: Tick Field - " + tickPriceField + "Tick Option - " + tickOptionComputationField);
 
         }
 
@@ -38,6 +41,7 @@ namespace OptionStrategy
         {
             //base.contractDetails(reqId, contractDetails);
             contractsStrike.Add(contractDetails.Summary.Strike);
+            Console.WriteLine("Contract Details reqId: " + reqId + " Contract Details: " + contractDetails);
         }
 
         // Finished getting Contracts Details
@@ -51,7 +55,7 @@ namespace OptionStrategy
             }
             Array.Sort(incomingStrikes);
             parentDataHandler.SetStrikesList(reqId, incomingStrikes);
-
+            Console.WriteLine("Contracts End: reqId - " + reqId);
         }
 
         // Tick Price
@@ -59,9 +63,10 @@ namespace OptionStrategy
         {
             //base.tickPrice(tickerId, field, price, canAutoExecute);
             // If bid price
-            if(field == tickPriceField)// 1=Bid, 2=Ask, 4=Last, 9=Closed
+            if(field == tickPriceField)// 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
             {
                 incomingBid = price;
+                Console.WriteLine("Ticker Price: tickerId - " + tickerId + " Field - " + field + " Price - " + price);
             }
             
         }
@@ -71,23 +76,26 @@ namespace OptionStrategy
         {
             //base.tickOptionComputation(tickerId, field, impliedVolatility, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
 
-            if(field == tickOptionComputationField)// 10=Bid, 11=Ask, 12=Last, 13=Model
+            if(field == tickOptionComputationField)// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
             {
-                incomingDelta = delta;
+                incomingDelta = Math.Abs(delta);// we need the absolute value because PUT's delta are negative
+                Console.WriteLine("Option Computation: tickerId - " + tickerId + " Field - " + field + " delta - " + delta + " Option Price - " + optPrice + " Underlying Price - " + undPrice);
             }
+
         }
 
         // Finished getting tick data
         public override void tickSnapshotEnd(int tickerId)
         {
             //base.tickSnapshotEnd(tickerId);
-            double[] bidAndDelta = new double[] { incomingDelta, incomingBid};// Actually should be DeltaAndBid since they come the other way around
+            double[] bidAndDelta = new double[] { incomingDelta, incomingBid };// Actually should be DeltaAndBid since they come the other way around
             parentDataHandler.SetBidAndDelta(tickerId, bidAndDelta);
             incomingBid = 0; // Reset the data, in case next one isn't found
             incomingDelta = 0; // Reset the data, in case next one isn't found
-        }
 
-        // Error Handling
+            Console.WriteLine("Option Computation: tickerId - " + tickerId);
+        }
+            // Error Handling
         public override void error(int id, int errorCode, string errorMsg)
         {
             // If no contract is found just skip over

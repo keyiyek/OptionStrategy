@@ -65,28 +65,28 @@ public class AbstractIBWrapper : EWrapper
     //! [tickprice]
     public virtual void tickPrice(int tickerId, int field, double price, int canAutoExecute)
     {
-        Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", Field: " + field + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute);
+        //Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", Field: " + field + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute);
     }
     //! [tickprice]
 
     //! [ticksize]
     public virtual void tickSize(int tickerId, int field, int size)
     {
-        Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", Field: " + field + ", Size: " + size);
+        //Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", Field: " + field + ", Size: " + size);
     }
     //! [ticksize]
 
     //! [tickstring]
     public virtual void tickString(int tickerId, int tickType, string value)
     {
-        Console.WriteLine("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + value);
+        //Console.WriteLine("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + value);
     }
     //! [tickstring]
 
     //! [tickgeneric]
     public virtual void tickGeneric(int tickerId, int field, double value)
     {
-        Console.WriteLine("Tick Generic. Ticker Id:" + tickerId + ", Field: " + field + ", Value: " + value);
+        //Console.WriteLine("Tick Generic. Ticker Id:" + tickerId + ", Field: " + field + ", Value: " + value);
     }
     //! [tickgeneric]
 
@@ -125,8 +125,8 @@ public class AbstractIBWrapper : EWrapper
     //! [tickoptioncomputation]
     public virtual void tickOptionComputation(int tickerId, int field, double impliedVolatility, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice)
     {
-        Console.WriteLine("TickOptionComputation. TickerId: " + tickerId + ", field: " + field + ", ImpliedVolatility: " + impliedVolatility + ", Delta: " + delta
-            + ", OptionPrice: " + optPrice + ", pvDividend: " + pvDividend + ", Gamma: " + gamma + ", Vega: " + vega + ", Theta: " + theta + ", UnderlyingPrice: " + undPrice);
+        //Console.WriteLine("TickOptionComputation. TickerId: " + tickerId + ", field: " + field + ", ImpliedVolatility: " + impliedVolatility + ", Delta: " + delta
+        //    + ", OptionPrice: " + optPrice + ", pvDividend: " + pvDividend + ", Gamma: " + gamma + ", Vega: " + vega + ", Theta: " + theta + ", UnderlyingPrice: " + undPrice);
     }
     //! [tickoptioncomputation]
 
@@ -199,7 +199,7 @@ public class AbstractIBWrapper : EWrapper
     //! [contractdetails]
     public virtual void contractDetails(int reqId, ContractDetails contractDetails)
     {
-        Console.WriteLine("ContractDetails. ReqId: " + reqId + " - " + contractDetails.Summary.Symbol + ", " + contractDetails.Summary.SecType + ", ConId: " + contractDetails.Summary.ConId + " @ " + contractDetails.Summary.Exchange);
+        //Console.WriteLine("ContractDetails. ReqId: " + reqId + " - " + contractDetails.Summary.Symbol + ", " + contractDetails.Summary.SecType + ", ConId: " + contractDetails.Summary.ConId + " @ " + contractDetails.Summary.Exchange);
     }
     //! [contractdetails]
 

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using IBApi;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace OptionStrategy
 {
@@ -31,8 +33,12 @@ namespace OptionStrategy
 
         // Connection Constants
         const string connectionHost = "";
-        const int connectionPort = 4001;
+        const int connectionPort = 4001; // for Gateway
+        //const int connectionPort = 7497; // for TWS
+
         const int connectionExtraAuth = 0;
+        const int marketDataTypeSTK = 3; // type of data, 1 live, 2 frozen, 3 delayed, 4 frozen from delayed
+        const int marketDataTypeOPT = 3;
 
         // ConnectionID multipliers
         // They are used to build unique connectionIDs
@@ -46,14 +52,12 @@ namespace OptionStrategy
         int connectionTK = 0;
         double connectionSP = 0;
 
-
-
         // Initialization
         // ClientID tells all the DataHAndlers apart
         // parentClass to send back information
         // DateTime, Right are defined in frmMain, so easy to have them setup here
         // tickers the list of the tickers assigned to the DataHandler
-        public DataHandler2(int clientID, frmMain parentClass, DateTime incomingExpirationDate, string incomingRight, string[] incomingTickers, int priceField, int optionField)
+        public DataHandler2(int clientID, frmMain parentClass, DateTime incomingExpirationDate, string incomingRight, string[] incomingTickers)
         {
             dataHandlerID = clientID;//Define the ID of the DataHandler
             connectionDH = dataHandlerID; // Setting the first
@@ -68,7 +72,7 @@ namespace OptionStrategy
             tickersList = incomingTickers;
 
             // Wrapper, connection and requests
-            singleWrapper = new OSWrapper2(this, priceField, optionField);
+            singleWrapper = new OSWrapper2(this);
             this.ConnectionToTheServer();
             this.requestingData();
 
@@ -101,13 +105,20 @@ namespace OptionStrategy
         // Request for ticker Price
         private void RequestTickerPrice()
         {
-            singleWrapper.ClientSocket.reqMktData(CalculateConnectionID() + 1, contractDefinition, "", true, null); // This is to ask for the price, ConnectionID +1, so has an ending (1) different from all others (0 or 5) and we can distinguish it
+            int connectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataTypeSTK);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqMktData(connectionID + 1, contractDefinition, "", true, null); // This is to ask for the price, ConnectionID +1, so has an ending (1) different from all others (0 or 5) and we can distinguish it
         }
 
         // Requests for Contracts Details
         private void RequestContractDetails()
         {
-            singleWrapper.ClientSocket.reqContractDetails(CalculateConnectionID(), contractDefinition);// We ask for the list of Strike Prices
+            //singleWrapper.tickPriceField = marketForOptions;
+            int connectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataTypeSTK);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqContractDetails(connectionID, contractDefinition);// We ask for the list of Strike Prices
         }
 
         // Request for Market Data on Options, this function needs the ConnectionID to understand what Ticker is relevant 
@@ -124,7 +135,10 @@ namespace OptionStrategy
 
 
             // Calling for the data
-            singleWrapper.ClientSocket.reqMktData(CalculateConnectionID(), contractDefinition, "", true, null);
+            int finalConnectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataTypeOPT);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqMktData(finalConnectionID, contractDefinition, "", true, null);
 
         }
 
@@ -132,6 +146,7 @@ namespace OptionStrategy
         //********************************************************************************
         // These are methods called from the Wrapper
         // Incoming strike prices list
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetStrikesList(int connectionID, List<double> incomingStrikesList)
         {
             TickerData activeTD = GetRelevantTickerData(connectionID);// Find the relevant TickerData
@@ -140,25 +155,36 @@ namespace OptionStrategy
             // Asking for all the strikes, in short sequence
             foreach(double incomingStrike in incomingStrikesList)
             {
+
                 RequestMarketData(connectionID, incomingStrike);
             }
 
         }
 
-        public void SetBidAndDelta(int connectionID, double[] bidAndDelta)
+        // Setting the bidAndDelta to send to TD
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SetBidOrDelta(int connectionID, int index, int campo, double incomingData)
         {
-            // Ser a reference to the relevant TickerData
+            // We bild the bidAndDelta
+            
+            double[] bidAndDelta = new double[2];
+            bidAndDelta[index] = incomingData;
+
+            // Set a reference to the relevant TickerData
             TickerData activeTD = GetRelevantTickerData(connectionID);
 
             // If it is a price request set the TickerData price
             if (CheckTickerPriceRequest(connectionID) == 1)
             {
-                activeTD.SetPrice(bidAndDelta[1]); // Adding the bid part of bidAndDelta
+                activeTD.SetPrice(incomingData); // Adding the bid part of bidAndDelta
             }
             else // Means is a strike price bid&delta
             {
                 activeTD.SetStrike(CalculateStrikePriceID(connectionID), bidAndDelta); // add bidAndDelta (value) to the Dictionary, with strike price as key
             }
+            
+            Console.WriteLine("Connessione: " + connectionID + " - Campo: " + campo + " - Indice: " + index + " - Dato: " + incomingData);
+
         }
 
         // UTILITY METHODS
@@ -251,5 +277,6 @@ namespace OptionStrategy
 
             return relevantTD;
         }
+
     }
 }

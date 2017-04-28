@@ -54,10 +54,12 @@ namespace OptionStrategy
         int connectionSP = 0; // Strike Price connectionID
 
         const string connectionHost = "";
-        const int connectionPort = 4001;
+        const int connectionPort = 4001; // for Gateway
+        //const int connectionPort = 7497; // for TWS
         const int connectionExtraAuth = 0;
+        const int marketDataType = 3; // Market Data Types 1 Live, 2 Frozen, 3 delayed, 4 frozen on delayed
         
-        public DataHandler(int clientID, frmMain parentClass, DateTime chosenExpirationDate, string right, string[] tickers, int priceField, int optionField)
+        public DataHandler(int clientID, frmMain parentClass, DateTime chosenExpirationDate, string right, string[] tickers)
         {
             parentReference = parentClass;//this is to have a reference for callbacks.
 
@@ -69,7 +71,7 @@ namespace OptionStrategy
             optionRight = right;
 
             // We initialize a new Wrapper
-            singleWrapper = new OSWrapper(this, priceField, optionField);
+            singleWrapper = new OSWrapper(this);
 
             // Constants setting for the Contracts
             contractDefinition = new Contract();
@@ -88,6 +90,8 @@ namespace OptionStrategy
             StartStrategyProcedure(tickersList[tickerListCounter]);
         }
 
+        // CONNECTION METHODS
+        //**********************************************************************************
         // Conenction to the server
         private void ConnectionToTheServer()
         {
@@ -116,6 +120,8 @@ namespace OptionStrategy
             singleWrapper.ClientSocket.eDisconnect();
         }
 
+        // DATA REQUESTS
+        //************************************************************************************
         // This method has the sequence for all the data collecting
         public void StartStrategyProcedure(string currentTicker)
         {
@@ -138,13 +144,19 @@ namespace OptionStrategy
         // Request for ticker Price
         private void RequestTickerPrice()
         {
-           singleWrapper.ClientSocket.reqMktData(CalculateConnectionID() +1, contractDefinition, "", true, null); // This is to ask for the price, ConnectionID +1, so has an ending different from all others and we can distinguish it
+            int connectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataType);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqMktData(connectionID +1, contractDefinition, "", true, null); // This is to ask for the price, ConnectionID +1, so has an ending different from all others and we can distinguish it
         }
 
         // Requests for Contracts Details
         private void RequestContractDetails()
         {
-            singleWrapper.ClientSocket.reqContractDetails(CalculateConnectionID(), contractDefinition);// We ask for the list of Strike Prices
+            int connectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataType);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqContractDetails(connectionID, contractDefinition);// We ask for the list of Strike Prices
         }
 
         // Request Market data for specific strike
@@ -152,7 +164,11 @@ namespace OptionStrategy
         {
             contractDefinition.Strike = strikesList[i]; // Setup Strike Price
             connectionSP = (int)(strikesList[i] * multiplierSP); // Unique connectionID, need to multiply here instead the formula or I'm going to miss the decimal point
-            singleWrapper.ClientSocket.reqMktData(CalculateConnectionID(), contractDefinition, "", true, null); // Request Market Data
+
+            int finalConnectionID = CalculateConnectionID();
+            singleWrapper.ClientSocket.reqMarketDataType(marketDataType);
+            Thread.Sleep(1000);
+            singleWrapper.ClientSocket.reqMktData(finalConnectionID, contractDefinition, "", true, null); // Request Market Data
         }
 
         // UTILITY METHODS
@@ -234,7 +250,6 @@ namespace OptionStrategy
                 {
                     // Send the TickerData back to the main form
                     SetStrikesTable(activeTD);
-                    
                 }
             }
         }
@@ -272,6 +287,9 @@ namespace OptionStrategy
         // This sends to the frmMain
         public void SetStrikesTable(TickerData incomingTickerData)
         {
+            // We clean the Ticker Data dictionary
+            incomingTickerData.DictionaryCleanUp();
+
             // We need to send the TickerData in pieces because we cant send it whole to frmMain (accessibility conflic)
             parentReference.SetStrikes(incomingTickerData.tickerSymbol, incomingTickerData.tickerPrice, incomingTickerData.tickerStrikes);// Send data to frmMain
             strikeListCounter = 0;

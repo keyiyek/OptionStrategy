@@ -9,27 +9,25 @@ using System.Diagnostics;
 namespace OptionStrategy
 {
     // Here we Override what we need from the Wrapper
-    class OSWrapper2 : AbstractIBWrapper
+    class OSWrapper3 : AbstractIBWrapper
     {
         //GLOBAL VARIABLES
         //*********************************************************************************
         // The creator DataHandler2
-        DataHandler2 parentDataHandler2;
+        frmMain parentDataHandler3;
         // The data coming from the servers
         private Dictionary<int, List<double>> contractsStrike = new Dictionary<int, List<double>>();
 
-        public int tickPriceFieldSTK;//This to set the kind of data you want for Stocks: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
-        public int tickPriceFieldOPT;//This to set the kind of data you want for Options: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
+        public int tickPriceField;//This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed
         private int tickOptionComputationField;// 10=Bid, 11=Ask, 12=Last, 13=Model
 
-        public OSWrapper2(DataHandler2 parentClass)
+        public OSWrapper3(frmMain parentClass)
         {
-            parentDataHandler2 = parentClass;
-            tickPriceFieldSTK = 66;// priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
-            tickPriceFieldOPT = 9;
-            tickOptionComputationField = 13;// optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
+            parentDataHandler3 = parentClass;
+            tickPriceField = 66;// priceField; //This to set the kind of data you want: 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
+            tickOptionComputationField = 83;// optionField;// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
 
-            Console.WriteLine("Wrapper: Tick Field - " + tickPriceFieldSTK + "Tick Option STK - " + tickPriceFieldOPT + "Tick Option OPT - " + tickOptionComputationField);
+            Console.WriteLine("Wrapper: Tick Field - " + tickPriceField + "Tick Option - " + tickOptionComputationField);
 
         }
 
@@ -57,7 +55,7 @@ namespace OptionStrategy
         public override void contractDetailsEnd(int reqId)
         {
             //base.contractDetailsEnd(reqId);
-            parentDataHandler2.SetStrikesList(reqId, contractsStrike[reqId]);
+            //parentDataHandler3.SetStrikesList(reqId, contractsStrike[reqId]);
 
             Console.WriteLine("Contracts End: reqId - " + reqId);
         }
@@ -67,9 +65,9 @@ namespace OptionStrategy
         {
             //base.tickPrice(tickerId, field, price, canAutoExecute);
             // If bid price
-            if (field == tickPriceFieldSTK || field == tickPriceFieldOPT)// 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
+            if (field == tickPriceField)// 1=Bid, 2=Ask, 4=Last, 9=Closed, Delayed data 66 Bid, 67 Ask, 68 Last, 72 Highest, 73 Lowest
             {
-                parentDataHandler2.SetBidOrDelta(tickerId, 1, field, price);
+                Console.WriteLine("field " + field + " price " + price);
             }
 
             Console.WriteLine("Ticker Price: tickerId - " + tickerId + " Field - " + field + " Price - " + price);
@@ -83,7 +81,7 @@ namespace OptionStrategy
 
             if (field == tickOptionComputationField)// 10=Bid, 11=Ask, 12=Last, 13=Model, Delayed 80 Bid, 81 Ask, 82 Last, 83 Model
             {
-                parentDataHandler2.SetBidOrDelta(tickerId, 0, field, Math.Abs(delta)); // we need the absolute value because PUT's deltas are negative
+                //parentDataHandler2.SetBidOrDelta(tickerId, 0, field, Math.Abs(delta)); // we need the absolute value because PUT's deltas are negative
             }
             Console.WriteLine("Option Computation: tickerId - " + tickerId + " Field - " + field + " delta - " + delta + " Option Price - " + optPrice + " Underlying Price - " + undPrice);
 
